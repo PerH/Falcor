@@ -55,7 +55,8 @@ namespace Falcor
         Window::Desc windowDesc;                                    ///< Controls window and creation
         Device::Desc deviceDesc;                                    ///< Controls device creation;
         bool showMessageBoxOnError = _SHOW_MB_BY_DEFAULT;           ///< Show message box on framework/API errors.
-        float timeScale = 1;                                        ///< A scaling factor for the time elapsed between frames.
+        float timeScale = 1.0f;                                     ///< A scaling factor for the time elapsed between frames.
+        float fixedTimeDelta = 0.0f;                                ///< If non-zero, specifies a fixed simulation time step per frame, which is further affected by time scale.
         bool freezeTimeOnStartup = false;                           ///< Control whether or not to start the clock when the sample start running.
         std::function<void(void)> deviceCreatedCallback = nullptr;  ///< Callback function which will be called after the device is created
     };
@@ -174,9 +175,12 @@ namespace Falcor
         void handleKeyboardEvent(const KeyboardEvent& keyEvent) override;
         void handleMouseEvent(const MouseEvent& mouseEvent) override;
         virtual float getTimeScale() final { return mTimeScale; }
+        float getFixedTimeDelta() { return mFixedTimeDelta; }
+        void setFixedTimeDelta(float newFixedTimeDelta) { mFixedTimeDelta = newFixedTimeDelta; }
         void initVideoCapture();
 
-        void captureScreen();
+        std::string captureScreen(const std::string explicitFilename = "", const std::string explicitOutputDirectory = "");
+
         void toggleText(bool enabled);
         uint32_t getFrameID() const { return mFrameRate.getFrameCount(); }
 
@@ -203,13 +207,14 @@ namespace Falcor
             VideoEncoderUI::UniquePtr pUI;
             VideoEncoder::UniquePtr pVideoCapture;
             uint8_t* pFrame = nullptr;
-            float timeDelta;
+            float sampleTimeDelta; // Saves the sample's fixed time delta because video capture overwrites it while recording
         };
 
         VideoCaptureData mVideoCapture;
 
         FrameRate mFrameRate;
         float mTimeScale;
+        float mFixedTimeDelta;
 
         TextRenderer::UniquePtr mpTextRenderer;
         std::set<KeyboardEvent::Key> mPressedKeys;
